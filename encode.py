@@ -7,7 +7,7 @@ exp_dna_out = "TAGTATATCGACTAGTACAGCGTAGCATCTCGCAGCGAGATACGCTGCTACGCAGCATGC" \
 exp_split_dna = ["TAGTATATCGACTAGTACAGCGTAGCATCTCGCAGCGAGATACGCTGCTACGCAGCATGCTGTGAGTATCGATGA", "CATCTCGCAGCGAGATACGCTGCTACGCAGCATGCTGTGAGTATCGATGACGAGTGACTCTGTACAGTACGTAC"]
 
 exp_115 = ["TAGTATATCGACTAGTACAGCGTAGCATCTCGCAGCGAGATACGCTGCTACGCAGCATGCTGTGAGTATCGATGACGAGTGACTCTGTACAGTACGTACGATACGTACGTACGTC",  "ATAGTCGTACGTACGTACGTACGTACGTACGTACTGTACAGAGTCACTCGTCATCGATACTCACAGCATGCTGCGTAGCAGCGTATCTCGCTGCGAGATGATACGTACGTACGAG"]
-
+exp_117 = ["ATAGTATATCGACTAGTACAGCGTAGCATCTCGCAGCGAGATACGCTGCTACGCAGCATGCTGTGAGTATCGATGACGAGTGACTCTGTACAGTACGTACGATACGTACGTACGTCG",  "TATAGTCGTACGTACGTACGTACGTACGTACGTACTGTACAGAGTCACTCGTCATCGATACTCACAGCATGCTGCGTAGCAGCGTATCTCGCTGCGAGATGATACGTACGTACGAGC"]
 
 huffman = {0: '22201', 85: '22200', 170: '22122', 127: '22121', 253: '22120', 52: '22112', 138: '22111', 41: "22110",
            86: '22102', 42: '22101', 100: '22100', 44: '22022', 250: '22020', 132: '22021', 161: '22012', 98: '22010',
@@ -164,3 +164,28 @@ for i in range(len(s5)):
 # this is the final 117 bp dna string
 # will be 125 bp with illumina adapters
 print(s5)
+
+def add_parity_trit(dna, ID):
+    for i in range(len(dna)):
+        dna[i] += b3_to_dna(generate_parity_trit(dna[i], i, ID), prev_char=dna[i][-1])
+        assert len(dna[i]) == 115
+    return dna
+
+def polish_ends(dna):
+    for i in range(len(dna)):
+        dna[i] = add_final_trits(dna[i])
+        assert len(dna[i]) == 117
+    return dna
+
+def encode(in_str, ID):
+    ord_str = [ord(l) for l in in_str]
+    b3_str = "".join(a2b3(ord_str))
+    dna_str = build_initial_dna_string(b3_str)
+    split_str = split_and_index(dna_str)
+    out_str = polish_ends(add_parity_trit(split_str, ID))
+    return out_str
+
+print("xxxxxxxxxxxxxxxxx")
+a = encode(s0, "12")
+print(a)
+assert a == exp_117
