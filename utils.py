@@ -109,3 +109,12 @@ def rev_comp(dna):
     for l in dna[::-1]:
         dna_out += complements[l]
     return dna_out
+
+def generate_parity_trit(dna, i, ID):
+    i3 = int_to_b3(i)
+    i3 = "0"*(12-len(i3)) + i3
+    temp = ID + i3
+    even_trits = [int(temp[x]) for x in range(len(temp)) if x % 2 == 0]
+    parity_trit = sum(even_trits) % 3
+    index = ID + i3 + str(parity_trit)
+    return index

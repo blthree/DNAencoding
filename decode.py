@@ -1,5 +1,5 @@
 from utils import huffman_decode
-
+from functools import reduce
 
 dna_in = \
     ['ATAGTATATCGACTAGTACAGCGTAGCATCTCGCAGCGAGATACGCTGCTACGCAGCATGCTGTGAGTATCGATGACGAGTGACTCTGTACAGTACGTACGATACGTACGTACGTCG',
@@ -95,6 +95,40 @@ def generate_parity_trit(i3, ID):
     index = ID + i3 + str(parity_trit)
     return index
 
+
+# TODO: fix this function, reads need to be passed in appropriate numerical order!!!!
+def merge_overlapping(dna1, dna2):
+    print(len(dna1), len(dna2))
+    print("{0} \n{1}{2} ".format(dna1, "0"*(25+len(dna1)-len(dna2)) ,dna2))
+    if dna1[-75:] == dna2[:75]:
+        return dna1 + dna2[-25:]
+    else:
+        raise Exception("Could not merge dna strings \n dna1: {0} \n dna2: {1} ".format(dna1[-75:], dna2[:75]))
+
+
+
+def strip_len_info(b3):
+    str_len = b3_to_int(b3[-20:])
+    b3 = b3[:-20]
+    zeros_to_remove = len(b3) - str_len
+    assert b3[-zeros_to_remove:] == "0"*zeros_to_remove
+    b3 = b3[:-zeros_to_remove]
+    return b3
+
+
+def b3_to_ord(b3):
+    ords = bytearray()
+    accum = ""
+    for i in range(len(b3)):
+        accum += b3[i]
+        if accum in huffman_decode:
+            ords.append(huffman_decode[accum])
+            accum = ""
+        else:
+            pass
+    return ords
+
+#### begin old procedural code
 verified_dna = check_len_and_orientation(dna_in)
 print(verified_dna)
 indexed_dna = dict()
@@ -109,11 +143,7 @@ dna_map = {'A': {'C': '0', 'G': '1', 'T': '2'},
            'G': {'T': '0', 'A': '1', 'C': '2'},
            'T': {'A': '0', 'C': '1', 'G': '2'}}
 
-def merge_overlapping(dna1, dna2):
-    if dna1[-75:] == dna2[:75]:
-        return dna1 + dna2[-25:]
-    else:
-        raise Exception("Could not merge dna strings")
+
 
 parsed_index = {}
 for x in indexed_b3:
@@ -142,30 +172,49 @@ b3_message = dna_to_b3(merged)
 print(b3_message)
 assert b3_message == exp_b3
 
-def strip_len_info(b3):
-    str_len = b3_to_int(b3[-20:])
-    b3 = b3[:-20]
-    zeros_to_remove = len(b3) - str_len
-    assert b3[-zeros_to_remove:] == "0"*zeros_to_remove
-    b3 = b3[:-zeros_to_remove]
-    return b3
-
-
-def b3_to_ord(b3):
-    ords = bytearray()
-    accum = ""
-    for i in range(len(b3)):
-        accum += b3[i]
-        if accum in huffman_decode:
-            ords.append(huffman_decode[accum])
-            accum = ""
-        else:
-            pass
-    return ords
 ord_data = b3_to_ord(strip_len_info(b3_message))
 print(ord_data)
 #print(strip_len_info(b3_message))
 decoded = [chr(o) for o in ord_data]
 print("".join(decoded))
 
+with open("out.txt", 'r') as f:
+    metamorph = [line.strip("\n") for line in f.readlines()]
+
+
+####### BEGIN decode metamorph
+
+verified_dna = check_len_and_orientation(metamorph)
+print(verified_dna)
+indexed_dna = dict()
+indexed_b3 = dict()
+for seq in verified_dna:
+    indexed_dna[seq[-15:]] = seq[:-15]
+    indexed_b3[dna_to_b3(seq[-15:], prev_char=seq[-16])] = seq[:-15]
+
+parsed_index = {}
+for x in indexed_b3:
+    parsed_index[confirm_parity(x)] = indexed_b3[x]
+files = dict()
+for key in parsed_index:
+    file_id, chunk_id = key
+    if file_id not in files:
+        files[file_id] = {int(chunk_id): parsed_index[key]}
+    else:
+        files[file_id][int(chunk_id)] = parsed_index[key]
+f1 = files["12"]
+for key in f1:
+    if key % 2 != 0:
+        f1[key] = rev_comp(f1[key])
+print(f1.keys())
+#merged = merge_overlapping(f1[0], f1[1])
+y = [k for k in f1]
+print(y)
+merged = reduce(merge_overlapping, [f1[k] for k in f1])
+b3_message = dna_to_b3(merged)
+print(b3_message)
+ord_data = b3_to_ord(strip_len_info(b3_message))
+print(ord_data)
+decoded = [chr(o) for o in ord_data]
+print("".join(decoded))
 
