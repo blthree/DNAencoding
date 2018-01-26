@@ -24,7 +24,7 @@ def split_and_index(dna):
     dna = chunk_str(dna)
     for i in range(len(dna)):
         if i % 2 == 1:
-            dna[i] = rev_comp(dna[i])
+            dna[i] = rev_comp2(dna[i])
     return dna
 
 def rand_base(bases):
@@ -46,28 +46,7 @@ def add_final_trits(dna):
     #print(dna)
     return dna
 
-s0_ord = [ord(l) for l in s0]
-s1 = "".join(a2b3(s0_ord))
-s2 = build_initial_dna_string(s1)
-assert s2 == exp_dna_out
-#print(s2)
-#print(exp_dna_out)
-s5 = split_and_index(s2)
-assert rev_comp("AATTGCA") == "TGCAATT"
-ID = "12"
-for i in range(len(s5)):
-    s5[i] += b3_to_dna(generate_parity_trit(s5[i], i, ID), prev_char=s5[i][-1])
-    assert len(s5[i]) == 115
-#print(s5)
-#print(exp_115)
-assert s5 == exp_115
-for i in range(len(s5)):
-    s5[i] = add_final_trits(s5[i])
-    assert len(s5[i]) == 117
-# this is the final 117 bp dna string
-# will be 125 bp with illumina adapters
-assert s5 == exp_117
-#print(s5)
+
 
 def add_parity_trit(dna, ID):
     for i in range(len(dna)):
@@ -83,23 +62,26 @@ def polish_ends(dna):
     return dna
 
 def encode(in_str, ID):
-    ord_str = [ord(l) for l in in_str]
+    if not isinstance(in_str, bytes):
+        ord_str = [ord(l) for l in in_str]
+    else:
+        ord_str = [int(x) for x in in_str]
     b3_str = "".join(a2b3(ord_str))
     dna_str = build_initial_dna_string(b3_str)
     split_str = split_and_index(dna_str)
     out_str = polish_ends(add_parity_trit(split_str, ID))
     return out_str
 
+def create_dna_from_file(in_filename, out_filename):
+    a = encode(s0, "12")
+    print("xxxxxxxxxxxxxxxxx")
+    assert a == exp_117
+    with open(in_filename, 'rb') as f:
+        metamorph = f.read()
+        #m_ascii = metamorph.encode('ascii', 'ignore')
+        #m_cleaned = m_ascii.decode('ascii')
+    b = encode(metamorph, "12")
+    with open(out_filename, 'w') as f2:
+        f2.write("\n".join(b))
 
-a = encode(s0, "12")
-#print(a)
-print("xxxxxxxxxxxxxxxxx")
-assert a == exp_117
-with open("pg5200.txt", 'r') as f:
-    metamorph = "\n".join(f.readlines())
-    m_ascii = metamorph.encode('ascii', 'ignore')
-    m_cleaned = m_ascii.decode('ascii')
-
-b = encode(m_cleaned, "12")
-with open("out.txt", 'w') as f2:
-    f2.write("\n".join(b))
+create_dna_from_file("background_img.jpg", "out.jpg")
