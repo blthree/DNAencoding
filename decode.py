@@ -180,6 +180,8 @@ def split_up(dna_list):
 
 logging.info("Found {0} sequences, encoding approximately {1} characters".format(len(f1), len(f1)*18))
 # TODO: make me faster, need to dump to disk or something
+# if we just split and map reduce, then we lose the previous char!
+# could also convert then merge, by passing a tuple of (current seq, prev_seq[:-1])
 split_up(f1)
 merged = reduce(merge_overlapping2, [f1[k] for k in range(len(f1))])
 
