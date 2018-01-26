@@ -59,6 +59,44 @@ def dna_to_b3(str_to_decode, prev_char=None):
                'G': {'T': '0', 'A': '1', 'C': '2'},
                'T': {'A': '0', 'C': '1', 'G': '2'}}
     b3_out = ""
+    dna_tables = {'A': str.maketrans({'C': '0', 'G': '1', 'T': '2'}),
+               'C': str.maketrans({'G': '0', 'T': '1', 'A': '2'}),
+               'G': str.maketrans({'T': '0', 'A': '1', 'C': '2'}),
+               'T': str.maketrans({'A': '0', 'C': '1', 'G': '2'})}
+    for i in range(len(str_to_decode)):
+        if not prev_char:
+            prev_char = 'A'
+        cur_char = dna_map[prev_char][str_to_decode[i]]
+        b3_out += cur_char
+        prev_char = str_to_decode[i]
+    return b3_out
+
+def dna_to_b32(str_to_decode, prev_char=None):
+    dna_map = {'A': {'C': '0', 'G': '1', 'T': '2'},
+               'C': {'G': '0', 'T': '1', 'A': '2'},
+               'G': {'T': '0', 'A': '1', 'C': '2'},
+               'T': {'A': '0', 'C': '1', 'G': '2'}}
+    b3_out = ""
+    dna_tables = {'A': str.maketrans({'C': '0', 'G': '1', 'T': '2'}),
+               'C': str.maketrans({'G': '0', 'T': '1', 'A': '2'}),
+               'G': str.maketrans({'T': '0', 'A': '1', 'C': '2'}),
+               'T': str.maketrans({'A': '0', 'C': '1', 'G': '2'})}
+    for i in range(len(str_to_decode)):
+        if not prev_char:
+            prev_char = 'A'
+        cur_char = str_to_decode[i].translate(dna_tables[prev_char])
+        b3_out += cur_char
+        prev_char = str_to_decode[i]
+    return b3_out
+
+def dnatup_to_b3(in_tuple):
+    str_to_decode, prev_char = in_tuple
+    dna_map = {'A': {'C': '0', 'G': '1', 'T': '2'},
+               'C': {'G': '0', 'T': '1', 'A': '2'},
+               'G': {'T': '0', 'A': '1', 'C': '2'},
+               'T': {'A': '0', 'C': '1', 'G': '2'}}
+    b3_out = ""
+
     for i in range(len(str_to_decode)):
         if not prev_char:
             prev_char = 'A'
@@ -106,9 +144,21 @@ def merge_overlapping(dna1, dna2):
     else:
         raise Exception("Could not merge dna strings \n dna1: {0} \n dna2: {1} ".format(dna1[-75:], dna2[:75]))
 def merge_overlapping2(dna1, dna2):
+    if dna1[-75:] == dna2[:75]:
         if len(dna1) % 25000 == 0:
-            logging.info("Merged {0} sequences".format(((len(dna1)-100)/25)+1))
+            logging.info("Merged {0} sequences".format(((len(dna1) - 100) / 25) + 1))
         return dna1 + dna2[-25:]
+    else:
+        print(check_overlap(dna1, dna2, 25))
+        raise Exception("Could not merge dna strings \n dna1: {0} \n dna2: {1} ".format(dna1[-75:], dna2[:75]))
+
+
+def check_overlap(seqA, seqB, k):
+    if seqA[-k:] == seqB[:k]:
+        return True
+    else:
+        return False
+
 
 def strip_len_info(b3):
     str_len = b3_to_int(b3[-20:])
@@ -180,8 +230,26 @@ def split_up(dna_list):
 
 logging.info("Found {0} sequences, encoding approximately {1} characters".format(len(f1), len(f1)*18))
 # TODO: make me faster, need to dump to disk or something
-split_up(f1)
-merged = reduce(merge_overlapping2, [f1[k] for k in range(len(f1))])
+# if we just split and map reduce, then we lose the previous char!
+# could also convert then merge, by passing a tuple of (current seq, prev_seq[:-1])
+#groups = split_up(f1)
+#f1[-1] = "A"
+#merged = reduce(merge_overlapping2, [f1[k]for k in range(len(f1))])
+sp = split_up(f1)
+m2 = []
+for g in sp:
+    print(len(g))
+    m2.append(reduce(merge_overlapping2, [g[k] for k in range(len(g))]))
+    print(len(m2[-1]))
+xt = [len(x) for x in m2]
+print(xt)
+print(m2[0][-100:])
+print("0"*25 + m2[1][:25])
+merged = reduce(merge_overlapping2, [m2[k]for k in range(len(m2))])
+#merged = reduce(merge_overlapping2, [f1[k] for k in range(len(f1))])
+#merged = ""
+#acc = f1[0]
+
 
 logging.info("Merge complete")
 logging.info("Begin dna to base3 conversion")
