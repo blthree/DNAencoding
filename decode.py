@@ -4,11 +4,6 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 
-dna_map = {'A': {'C': '0', 'G': '1', 'T': '2'},
-           'C': {'G': '0', 'T': '1', 'A': '2'},
-           'G': {'T': '0', 'A': '1', 'C': '2'},
-           'T': {'A': '0', 'C': '1', 'G': '2'}}
-
 
 def check_len_and_orientation(dna):
     valid_starts = ['A', 'T']
@@ -116,7 +111,7 @@ def b3_to_ord(b3):
 
 
 def load_indexed_seqs(verified_dna):
-    id_2 = [(dna_to_b3_alt(seq[-15:], prev_char=seq[-16]), seq[:-15]) for seq in verified_dna]
+    id_2 = [(dna_to_b3(seq[-15:], prev_char=seq[-16]), seq[:-15]) for seq in verified_dna]
     return dict(id_2)
 
 
@@ -161,25 +156,6 @@ def split_up(dna_list):
 
 def merge_newest(f1):
     return reduce(merge_overlapping2, map(lambda x: reduce(merge_overlapping2, x), split_up(f1)))
-decode_dna_map = {'A': str.maketrans({'C': '0', 'G': '1', 'T': '2'}),
-           'C': str.maketrans({'G': '0', 'T': '1', 'A': '2'}),
-           'G': str.maketrans({'T': '0', 'A': '1', 'C': '2'}),
-           'T': str.maketrans({'A': '0', 'C': '1', 'G': '2'})}
-def dna_to_b3_alt(str_to_decode, prev_char=None):
-    b3_out = ""
-    b3_out2 = ""
-    prev_char2 = prev_char
-
-    str_rev = str_to_decode[::-1]
-    for i in range(len(str_to_decode)):
-        if i == len(str_to_decode)-1:
-            if not prev_char2:
-                prev_char2 = 'A'
-            b3_out2 += str_rev[i].translate(decode_dna_map[prev_char2])
-        else:
-            b3_out2 += str_rev[i].translate(decode_dna_map[str_rev[i+1]])
-
-    return b3_out2[::-1]
 
 
 def decode():
@@ -196,7 +172,7 @@ def decode():
     merged = merge_newest(f1)
     logging.info("Merge complete")
     logging.info("Begin dna to base3 conversion")
-    b3_message = dna_to_b3_alt(merged)
+    b3_message = dna_to_b3(merged)
 
     ord_data = b3_to_ord(strip_len_info(b3_message))
 
