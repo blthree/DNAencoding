@@ -4,16 +4,6 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 
-
-dna_in = \
-    ['ATAGTATATCGACTAGTACAGCGTAGCATCTCGCAGCGAGATACGCTGCTACGCAGCATGCTGTGAGTATCGATGACGAGTGACTCTGTACAGTACGTACGATACGTACGTACGTCG',
-    'TATAGTCGTACGTACGTACGTACGTACGTACGTACTGTACAGAGTCACTCGTCATCGATACTCACAGCATGCTGCGTAGCAGCGTATCTCGCTGCGAGATGATACGTACGTACGAGC']
-exp_dna = "TAGTATATCGACTAGTACAGCGTAGCATCTCGCAGCGAGATACGCTGCTACGCAGCATGCTGTGAGTATCGATGACGAGTGACTCTGTACAGTACGTACGTACGTACGTACGTACGTACGACTAT"
-
-exp_split_dna = ["TAGTATATCGACTAGTACAGCGTAGCATCTCGCAGCGAGATACGCTGCTACGCAGCATGCTGTGAGTATCGATGA", "CATCTCGCAGCGAGATACGCTGCTACGCAGCATGCTGTGAGTATCGATGACGAGTGACTCTGTACAGTACGTAC"]
-
-exp_b3 = "20100202101010100021200012221110221201112000212210002212222212021100210122100110210111200021000000000000000000000000000010102"
-
 dna_map = {'A': {'C': '0', 'G': '1', 'T': '2'},
            'C': {'G': '0', 'T': '1', 'A': '2'},
            'G': {'T': '0', 'A': '1', 'C': '2'},
@@ -67,7 +57,6 @@ def dna_to_b3(str_to_decode, prev_char=None):
     return b3_out
 
 
-
 def b3_to_int(b3):
     out = 0
     for i in range(len(b3)):
@@ -77,7 +66,6 @@ def b3_to_int(b3):
 
 
 def confirm_parity(index):
-    parity_trit = index[-1]
     file_id = index[:2]
     chunk_id = index[2:-1]
     if generate_parity_trit(chunk_id, file_id) == index:
@@ -96,21 +84,10 @@ def generate_parity_trit(i3, ID):
     return index
 
 
-
-def merge_overlapping(dna1, dna2):
-    #print(len(dna1), len(dna2))
-    #print("{0} \n{1}{2} ".format(dna1, "0"*(25+len(dna1)-len(dna2)) ,dna2))
-    if dna1[-75:] == dna2[:75]:
-        if len(dna1) % 25000 == 0:
-            logging.info("Merged {0} sequences".format(((len(dna1)-100)/25)+1))
-        return dna1 + dna2[75:]
-    else:
-        raise Exception("Could not merge dna strings \n dna1: {0} \n dna2: {1} ".format(dna1[-75:], dna2[:75]))
 def merge_overlapping2(dna1, dna2):
     if dna1[-75:] == dna2[:75]:
         if len(dna1) % 25000 == 0:
             logging.info("Merged {0} sequences".format(((len(dna1) - 100) / 25) + 1))
-        #print(len(dna1 + dna2))
         return dna1 + dna2[75:]
     else:
         raise Exception("Could not merge dna strings \n dna1: {0} \n dna2: {1} ".format(dna1[-75:], dna2[:75]))
@@ -137,20 +114,6 @@ def b3_to_ord(b3):
     return ords
 
 
-dna_map = {'A': {'C': '0', 'G': '1', 'T': '2'},
-           'C': {'G': '0', 'T': '1', 'A': '2'},
-           'G': {'T': '0', 'A': '1', 'C': '2'},
-           'T': {'A': '0', 'C': '1', 'G': '2'}}
-
-
-with open("out.jpg", 'r') as f:
-    metamorph = [line.strip("\n") for line in f.readlines()]
-
-
-####### BEGIN decode metamorph
-
-verified_dna = check_len_and_orientation(metamorph)
-
 def load_indexed_seqs(verified_dna):
     id_2 = [(dna_to_b3(seq[-15:], prev_char=seq[-16]), seq[:-15]) for seq in verified_dna]
     return dict(id_2)
@@ -161,20 +124,25 @@ def parse_index(indexed_b3):
     return dict(p)
 
 
-indexed_b3 = load_indexed_seqs(verified_dna)
-parsed_index = parse_index(indexed_b3)
+def rev_comp_all(f1):
+    for key in f1:
+        if key % 2 != 0:
+            f1[key] = rev_comp2(f1[key])
+    fz = [()]
+    # TODO: rewrite as generator
+    return f1
 
-files = dict()
-for key in parsed_index:
-    file_id, chunk_id = key
-    if file_id not in files:
-        files[file_id] = {b3_to_int(chunk_id): parsed_index[key]}
-    else:
-        files[file_id][b3_to_int(chunk_id)] = parsed_index[key]
-f1 = files["12"]
-for key in f1:
-    if key % 2 != 0:
-        f1[key] = rev_comp2(f1[key])
+
+def assign_to_files(parsed_index):
+    files = dict()
+    for key in parsed_index:
+        file_id, chunk_id = key
+        if file_id not in files:
+            files[file_id] = {b3_to_int(chunk_id): parsed_index[key]}
+        else:
+            files[file_id][b3_to_int(chunk_id)] = parsed_index[key]
+    # TODO: rewrite as generator
+    return files
 
 def split_up(dna_list):
     groups = list()
@@ -188,21 +156,29 @@ def split_up(dna_list):
             ordered = ordered[10000:]
     return groups
 
-logging.info("Found {0} sequences, encoding approximately {1} characters".format(len(f1), len(f1)*18))
-
-
 
 def merge_newest(f1):
     return reduce(merge_overlapping2, map(lambda x: reduce(merge_overlapping2, x), split_up(f1)))
 
+def decode():
+    with open("out.jpg", 'r') as f:
+        metamorph = [line.strip("\n") for line in f.readlines()]
+    verified_dna = check_len_and_orientation(metamorph)
+    indexed_b3 = load_indexed_seqs(verified_dna)
+    parsed_index = parse_index(indexed_b3)
+    f1 = assign_to_files(parsed_index)["12"]
+    f1 = rev_comp_all(f1)
 
-merged = merge_newest(f1)
-logging.info("Merge complete")
-logging.info("Begin dna to base3 conversion")
-b3_message = dna_to_b3(merged)
+    logging.info("Found {0} sequences, encoding approximately {1} characters".format(len(f1), len(f1)*18))
 
-ord_data = b3_to_ord(strip_len_info(b3_message))
+    merged = merge_newest(f1)
+    logging.info("Merge complete")
+    logging.info("Begin dna to base3 conversion")
+    b3_message = dna_to_b3(merged)
 
-with open("decoded.jpg", "wb") as f:
-    f.write(ord_data)
+    ord_data = b3_to_ord(strip_len_info(b3_message))
+
+    with open("decoded.jpg", "wb") as f:
+        f.write(ord_data)
+decode()
 
