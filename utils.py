@@ -1,6 +1,12 @@
 from functools import reduce
 
 complements = str.maketrans({'A': 'T', 'G': 'C', 'C': 'G', 'T': 'A'})
+
+dna_map = {'A': {'C': '0', 'G': '1', 'T': '2'},
+           'C': {'G': '0', 'T': '1', 'A': '2'},
+           'G': {'T': '0', 'A': '1', 'C': '2'},
+           'T': {'A': '0', 'C': '1', 'G': '2'}}
+
 def a2b3(s):
     for ascii_code in s:
         yield huffman[ascii_code]
