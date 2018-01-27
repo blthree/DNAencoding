@@ -1,16 +1,4 @@
-import binascii
-from random import randint
 from utils import *
-
-s0 = "Birney and Goldman"
-exp_dna_out = "TAGTATATCGACTAGTACAGCGTAGCATCTCGCAGCGAGATACGCTGCTACGCAGCATGC" \
-          "TGTGAGTATCGATGACGAGTGACTCTGTACAGTACGTACGTACGTACGTACGTACGTACGACTAT"
-exp_split_dna = ["TAGTATATCGACTAGTACAGCGTAGCATCTCGCAGCGAGATACGCTGCTACGCAGCATGCTGTGAGTATCGATGA","CATCTCGCAGCGAGATACGCTGCTACGCAGCATGCTGTGAGTATCGATGACGAGTGACTCTGTACAGTACGTAC"]
-
-exp_115 = ["TAGTATATCGACTAGTACAGCGTAGCATCTCGCAGCGAGATACGCTGCTACGCAGCATGCTGTGAGTATCGATGACGAGTGACTCTGTACAGTACGTACGATACGTACGTACGTC",  "ATAGTCGTACGTACGTACGTACGTACGTACGTACTGTACAGAGTCACTCGTCATCGATACTCACAGCATGCTGCGTAGCAGCGTATCTCGCTGCGAGATGATACGTACGTACGAG"]
-exp_117 = ["ATAGTATATCGACTAGTACAGCGTAGCATCTCGCAGCGAGATACGCTGCTACGCAGCATGCTGTGAGTATCGATGACGAGTGACTCTGTACAGTACGTACGATACGTACGTACGTCG",  "TATAGTCGTACGTACGTACGTACGTACGTACGTACTGTACAGAGTCACTCGTCATCGATACTCACAGCATGCTGCGTAGCAGCGTATCTCGCTGCGAGATGATACGTACGTACGAGC"]
-
-
 
 
 def build_initial_dna_string(b3_str):
@@ -27,8 +15,11 @@ def split_and_index(dna):
             dna[i] = rev_comp2(dna[i])
     return dna
 
+
 def rand_base(bases):
+    # TODO: this should actually be random...
     return bases[0]
+
 
 def add_final_trits(dna):
     if dna.startswith("A"):
@@ -36,16 +27,14 @@ def add_final_trits(dna):
     elif dna.startswith("T"):
         dna = "A" + dna
     else:
-        dna = ["A", "T"][0] + dna #[randint(0, 10) % 2]
+        dna = ["A", "T"][0] + dna
     if dna.endswith("C"):
         dna += "G"
     elif dna.endswith("G"):
         dna += "C"
     else:
-        dna += ["C", "G"][0] #[randint(0, 10) % 2]
-    #print(dna)
+        dna += ["C", "G"][0]
     return dna
-
 
 
 def add_parity_trit(dna, ID):
@@ -54,12 +43,14 @@ def add_parity_trit(dna, ID):
         assert len(dna[i]) == 115
     return dna
 
+
 def polish_ends(dna):
     for i in range(len(dna)):
         assert len(dna[i]) == 115
         dna[i] = add_final_trits(dna[i])
-        assert len(dna[i]) == 117, "Bad line: number {0} {1}".format(i+1, dna[i])
+        assert len(dna[i]) == 117, "Bad line: number {0} {1}".format(i + 1, dna[i])
     return dna
+
 
 def encode(in_str, ID):
     if not isinstance(in_str, bytes):
@@ -72,16 +63,13 @@ def encode(in_str, ID):
     out_str = polish_ends(add_parity_trit(split_str, ID))
     return out_str
 
+
 def create_dna_from_file(in_filename, out_filename):
-    a = encode(s0, "12")
-    print("xxxxxxxxxxxxxxxxx")
-    assert a == exp_117
     with open(in_filename, 'rb') as f:
         metamorph = f.read()
-        #m_ascii = metamorph.encode('ascii', 'ignore')
-        #m_cleaned = m_ascii.decode('ascii')
     b = encode(metamorph, "12")
     with open(out_filename, 'w') as f2:
         f2.write("\n".join(b))
+
 
 create_dna_from_file("background_img.png", "out.jpg")
