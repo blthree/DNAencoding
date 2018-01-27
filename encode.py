@@ -84,4 +84,4 @@ def create_dna_from_file(in_filename, out_filename):
     with open(out_filename, 'w') as f2:
         f2.write("\n".join(b))
 
-create_dna_from_file("background_img.jpg", "out.jpg")
+create_dna_from_file("background_img.png", "out.jpg")

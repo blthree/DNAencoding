@@ -46,7 +46,6 @@ def b3_to_dna(str_to_encode, prev_char=None):
 
 
 def dna_to_b3(str_to_decode, prev_char=None):
-
     b3_out = ""
     for i in range(len(str_to_decode)):
         if not prev_char:
@@ -61,7 +60,7 @@ def b3_to_int(b3):
     out = 0
     for i in range(len(b3)):
         rev = b3[::-1]
-        out += (3**i)*int(rev[i])
+        out += (3 ** i) * int(rev[i])
     return out
 
 
@@ -75,8 +74,9 @@ def confirm_parity(index):
     out = (file_id, chunk_id)
     return out
 
+
 def generate_parity_trit(i3, ID):
-    i3 = "0"*(12-len(i3)) + i3
+    i3 = "0" * (12 - len(i3)) + i3
     temp = ID + i3
     even_trits = [int(temp[x]) for x in range(len(temp)) if x % 2 == 0]
     parity_trit = sum(even_trits) % 3
@@ -92,11 +92,12 @@ def merge_overlapping2(dna1, dna2):
     else:
         raise Exception("Could not merge dna strings \n dna1: {0} \n dna2: {1} ".format(dna1[-75:], dna2[:75]))
 
+
 def strip_len_info(b3):
     str_len = b3_to_int(b3[-20:])
     b3 = b3[:-20]
     zeros_to_remove = len(b3) - str_len
-    assert b3[-zeros_to_remove:] == "0"*zeros_to_remove
+    assert b3[-zeros_to_remove:] == "0" * zeros_to_remove
     b3 = b3[:-zeros_to_remove]
     return b3
 
@@ -115,7 +116,7 @@ def b3_to_ord(b3):
 
 
 def load_indexed_seqs(verified_dna):
-    id_2 = [(dna_to_b3(seq[-15:], prev_char=seq[-16]), seq[:-15]) for seq in verified_dna]
+    id_2 = [(dna_to_b3_alt(seq[-15:], prev_char=seq[-16]), seq[:-15]) for seq in verified_dna]
     return dict(id_2)
 
 
@@ -144,6 +145,7 @@ def assign_to_files(parsed_index):
     # TODO: rewrite as generator
     return files
 
+
 def split_up(dna_list):
     groups = list()
     ordered = [dna_list[i] for i in range(len(dna_list))]
@@ -159,6 +161,26 @@ def split_up(dna_list):
 
 def merge_newest(f1):
     return reduce(merge_overlapping2, map(lambda x: reduce(merge_overlapping2, x), split_up(f1)))
+decode_dna_map = {'A': str.maketrans({'C': '0', 'G': '1', 'T': '2'}),
+           'C': str.maketrans({'G': '0', 'T': '1', 'A': '2'}),
+           'G': str.maketrans({'T': '0', 'A': '1', 'C': '2'}),
+           'T': str.maketrans({'A': '0', 'C': '1', 'G': '2'})}
+def dna_to_b3_alt(str_to_decode, prev_char=None):
+    b3_out = ""
+    b3_out2 = ""
+    prev_char2 = prev_char
+
+    str_rev = str_to_decode[::-1]
+    for i in range(len(str_to_decode)):
+        if i == len(str_to_decode)-1:
+            if not prev_char2:
+                prev_char2 = 'A'
+            b3_out2 += str_rev[i].translate(decode_dna_map[prev_char2])
+        else:
+            b3_out2 += str_rev[i].translate(decode_dna_map[str_rev[i+1]])
+
+    return b3_out2[::-1]
+
 
 def decode():
     with open("out.jpg", 'r') as f:
@@ -169,16 +191,17 @@ def decode():
     f1 = assign_to_files(parsed_index)["12"]
     f1 = rev_comp_all(f1)
 
-    logging.info("Found {0} sequences, encoding approximately {1} characters".format(len(f1), len(f1)*18))
+    logging.info("Found {0} sequences, encoding approximately {1} characters".format(len(f1), len(f1) * 18))
 
     merged = merge_newest(f1)
     logging.info("Merge complete")
     logging.info("Begin dna to base3 conversion")
-    b3_message = dna_to_b3(merged)
+    b3_message = dna_to_b3_alt(merged)
 
     ord_data = b3_to_ord(strip_len_info(b3_message))
 
-    with open("decoded.jpg", "wb") as f:
+    with open("decoded.png", "wb") as f:
         f.write(ord_data)
-decode()
 
+
+decode()
