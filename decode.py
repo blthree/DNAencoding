@@ -184,43 +184,12 @@ def split_up(dna_list):
     return groups
 
 logging.info("Found {0} sequences, encoding approximately {1} characters".format(len(f1), len(f1)*18))
-# TODO: make me faster, need to dump to disk or something
-# if we just split and map reduce, then we lose the previous char!
-# could also convert then merge, by passing a tuple of (current seq, prev_seq[:-1])
 
-def merge_old(f1):
-    merged = reduce(merge_overlapping2, [f1[k] for k in range(len(f1))])
-    return merged
 
-def merge_new(f1):
-    m1 = []
-    for g in split_up(f1):
-        m1.append(reduce(merge_overlapping2, g))
-    #print(m1[0][-75:])
-    #print(m1[1][:75])
-    merge_overlapping(m1[0], m1[1])
-    #merged = reduce(merge_overlapping, m1)
-    accum = m1[0]
-    for i in range(len(m1)-1):
-        print("XXXXXXXXXXXXXXXXXXXXXXXXXXXX")
-        print(i)
-        print(accum[-75:])
-        print(m1[i+1][:75])
-        print(m1[i+1][-25:])
-        print("len is {0}".format(len(accum)))
-        #accum += m1[i+1][75:]
-        accum = merge_overlapping2(accum, m1[i+1])
-    return accum
 
 def merge_newest(f1):
-    m1 = []
-    #for g in split_up(f1):
-        #m1.append(reduce(merge_overlapping2, g))
-        #reduce(merge_overlapping2, )
     m = split_up(f1)
     out = reduce(merge_overlapping2, map(lambda x: reduce(merge_overlapping2, x), m))
-
-    #out = reduce(merge_overlapping2, reduce(merge_overlapping2, [g for g in split_up(f1)]))
     return out
 
 
