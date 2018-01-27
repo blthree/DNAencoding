@@ -1,4 +1,4 @@
-
+from functools import reduce
 
 complements = str.maketrans({'A': 'T', 'G': 'C', 'C': 'G', 'T': 'A'})
 def a2b3(s):
@@ -76,6 +76,7 @@ def b3_to_dna(str_to_encode, prev_char=None):
         prev_char = cur_char
 
     return dna_out
+
 
 def add_zeros(b3_str, mod_num=25):
     b3_str_len = len(b3_str)

@@ -14,8 +14,10 @@ exp_split_dna = ["TAGTATATCGACTAGTACAGCGTAGCATCTCGCAGCGAGATACGCTGCTACGCAGCATGCTG
 
 exp_b3 = "20100202101010100021200012221110221201112000212210002212222212021100210122100110210111200021000000000000000000000000000010102"
 
-
-
+dna_map = {'A': {'C': '0', 'G': '1', 'T': '2'},
+           'C': {'G': '0', 'T': '1', 'A': '2'},
+           'G': {'T': '0', 'A': '1', 'C': '2'},
+           'T': {'A': '0', 'C': '1', 'G': '2'}}
 
 
 def check_len_and_orientation(dna):
@@ -54,15 +56,8 @@ def b3_to_dna(str_to_encode, prev_char=None):
 
 
 def dna_to_b3(str_to_decode, prev_char=None):
-    dna_map = {'A': {'C': '0', 'G': '1', 'T': '2'},
-               'C': {'G': '0', 'T': '1', 'A': '2'},
-               'G': {'T': '0', 'A': '1', 'C': '2'},
-               'T': {'A': '0', 'C': '1', 'G': '2'}}
+
     b3_out = ""
-    dna_tables = {'A': str.maketrans({'C': '0', 'G': '1', 'T': '2'}),
-               'C': str.maketrans({'G': '0', 'T': '1', 'A': '2'}),
-               'G': str.maketrans({'T': '0', 'A': '1', 'C': '2'}),
-               'T': str.maketrans({'A': '0', 'C': '1', 'G': '2'})}
     for i in range(len(str_to_decode)):
         if not prev_char:
             prev_char = 'A'
@@ -71,39 +66,7 @@ def dna_to_b3(str_to_decode, prev_char=None):
         prev_char = str_to_decode[i]
     return b3_out
 
-def dna_to_b32(str_to_decode, prev_char=None):
-    dna_map = {'A': {'C': '0', 'G': '1', 'T': '2'},
-               'C': {'G': '0', 'T': '1', 'A': '2'},
-               'G': {'T': '0', 'A': '1', 'C': '2'},
-               'T': {'A': '0', 'C': '1', 'G': '2'}}
-    b3_out = ""
-    dna_tables = {'A': str.maketrans({'C': '0', 'G': '1', 'T': '2'}),
-               'C': str.maketrans({'G': '0', 'T': '1', 'A': '2'}),
-               'G': str.maketrans({'T': '0', 'A': '1', 'C': '2'}),
-               'T': str.maketrans({'A': '0', 'C': '1', 'G': '2'})}
-    for i in range(len(str_to_decode)):
-        if not prev_char:
-            prev_char = 'A'
-        cur_char = str_to_decode[i].translate(dna_tables[prev_char])
-        b3_out += cur_char
-        prev_char = str_to_decode[i]
-    return b3_out
 
-def dnatup_to_b3(in_tuple):
-    str_to_decode, prev_char = in_tuple
-    dna_map = {'A': {'C': '0', 'G': '1', 'T': '2'},
-               'C': {'G': '0', 'T': '1', 'A': '2'},
-               'G': {'T': '0', 'A': '1', 'C': '2'},
-               'T': {'A': '0', 'C': '1', 'G': '2'}}
-    b3_out = ""
-
-    for i in range(len(str_to_decode)):
-        if not prev_char:
-            prev_char = 'A'
-        cur_char = dna_map[prev_char][str_to_decode[i]]
-        b3_out += cur_char
-        prev_char = str_to_decode[i]
-    return b3_out
 
 def b3_to_int(b3):
     out = 0
@@ -140,25 +103,17 @@ def merge_overlapping(dna1, dna2):
     if dna1[-75:] == dna2[:75]:
         if len(dna1) % 25000 == 0:
             logging.info("Merged {0} sequences".format(((len(dna1)-100)/25)+1))
-        return dna1 + dna2[-25:]
+        return dna1 + dna2[75:]
     else:
         raise Exception("Could not merge dna strings \n dna1: {0} \n dna2: {1} ".format(dna1[-75:], dna2[:75]))
 def merge_overlapping2(dna1, dna2):
     if dna1[-75:] == dna2[:75]:
         if len(dna1) % 25000 == 0:
             logging.info("Merged {0} sequences".format(((len(dna1) - 100) / 25) + 1))
-        return dna1 + dna2[-25:]
+        #print(len(dna1 + dna2))
+        return dna1 + dna2[75:]
     else:
-        print(check_overlap(dna1, dna2, 25))
         raise Exception("Could not merge dna strings \n dna1: {0} \n dna2: {1} ".format(dna1[-75:], dna2[:75]))
-
-
-def check_overlap(seqA, seqB, k):
-    if seqA[-k:] == seqB[:k]:
-        return True
-    else:
-        return False
-
 
 def strip_len_info(b3):
     str_len = b3_to_int(b3[-20:])
@@ -182,39 +137,8 @@ def b3_to_ord(b3):
     return ords
 
 
-dna_map = {'A': {'C': '0', 'G': '1', 'T': '2'},
-           'C': {'G': '0', 'T': '1', 'A': '2'},
-           'G': {'T': '0', 'A': '1', 'C': '2'},
-           'T': {'A': '0', 'C': '1', 'G': '2'}}
 
 
-with open("out.jpg", 'r') as f:
-    metamorph = [line.strip("\n") for line in f.readlines()]
-
-
-####### BEGIN decode metamorph
-
-verified_dna = check_len_and_orientation(metamorph)
-indexed_dna = dict()
-indexed_b3 = dict()
-for seq in verified_dna:
-    indexed_dna[seq[-15:]] = seq[:-15]
-    indexed_b3[dna_to_b3(seq[-15:], prev_char=seq[-16])] = seq[:-15]
-
-parsed_index = {}
-for x in indexed_b3:
-    parsed_index[confirm_parity(x)] = indexed_b3[x]
-files = dict()
-for key in parsed_index:
-    file_id, chunk_id = key
-    if file_id not in files:
-        files[file_id] = {b3_to_int(chunk_id): parsed_index[key]}
-    else:
-        files[file_id][b3_to_int(chunk_id)] = parsed_index[key]
-f1 = files["12"]
-for key in f1:
-    if key % 2 != 0:
-        f1[key] = rev_comp2(f1[key])
 
 def split_up(dna_list):
     groups = list()
@@ -228,27 +152,56 @@ def split_up(dna_list):
             ordered = ordered[10000:]
     return groups
 
+
+def merge_newest(f1):
+    return reduce(merge_overlapping2, map(lambda x: reduce(merge_overlapping2, x), split_up(f1)))
+
+
+
+def load_indexed_seqs(verified_dna):
+    id_2 = [(dna_to_b3(seq[-15:], prev_char=seq[-16]), seq[:-15]) for seq in verified_dna]
+    return dict(id_2)#indexed_b3
+
+
+def parse_index(indexed_b3):
+    p = [(confirm_parity(x), indexed_b3[x]) for x in indexed_b3]
+    return dict(p)
+
+
+####### BEGIN decode metamorph
+
+with open("out.jpg", 'r') as f:
+    metamorph = [line.strip("\n") for line in f.readlines()]
+verified_dna = check_len_and_orientation(metamorph)
+indexed_b3 = load_indexed_seqs(verified_dna)
+parsed_index = parse_index(indexed_b3)
+
+def assign_to_files(parsed_index):
+    files = dict()
+    for key in parsed_index:
+        file_id, chunk_id = key
+        if file_id not in files:
+            files[file_id] = {b3_to_int(chunk_id): parsed_index[key]}
+        else:
+            files[file_id][b3_to_int(chunk_id)] = parsed_index[key]
+    # TODO: rewrite as generator
+    return files
+
+files = assign_to_files()
+f1 = files["12"]
+
+def rev_comp_all(f1):
+    for key in f1:
+        if key % 2 != 0:
+            f1[key] = rev_comp2(f1[key])
+    fz = [()]
+    # TODO: rewrite as generator
+    return f1
+
+
 logging.info("Found {0} sequences, encoding approximately {1} characters".format(len(f1), len(f1)*18))
-# TODO: make me faster, need to dump to disk or something
-# if we just split and map reduce, then we lose the previous char!
-# could also convert then merge, by passing a tuple of (current seq, prev_seq[:-1])
-#groups = split_up(f1)
-#f1[-1] = "A"
-#merged = reduce(merge_overlapping2, [f1[k]for k in range(len(f1))])
-sp = split_up(f1)
-m2 = []
-for g in sp:
-    print(len(g))
-    m2.append(reduce(merge_overlapping2, [g[k] for k in range(len(g))]))
-    print(len(m2[-1]))
-xt = [len(x) for x in m2]
-print(xt)
-print(m2[0][-100:])
-print("0"*25 + m2[1][:25])
-merged = reduce(merge_overlapping2, [m2[k]for k in range(len(m2))])
-#merged = reduce(merge_overlapping2, [f1[k] for k in range(len(f1))])
-#merged = ""
-#acc = f1[0]
+
+merged = merge_newest(f1)
 
 
 logging.info("Merge complete")
@@ -256,9 +209,7 @@ logging.info("Begin dna to base3 conversion")
 b3_message = dna_to_b3(merged)
 
 ord_data = b3_to_ord(strip_len_info(b3_message))
-
-#decoded2 = map(chr, ord_data)
-
+# Write out the decoded file as bytes
 with open("decoded.jpg", "wb") as f:
     f.write(ord_data)
 
