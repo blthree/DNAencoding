@@ -5,19 +5,6 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 
-dna_in = \
-    ['ATAGTATATCGACTAGTACAGCGTAGCATCTCGCAGCGAGATACGCTGCTACGCAGCATGCTGTGAGTATCGATGACGAGTGACTCTGTACAGTACGTACGATACGTACGTACGTCG',
-    'TATAGTCGTACGTACGTACGTACGTACGTACGTACTGTACAGAGTCACTCGTCATCGATACTCACAGCATGCTGCGTAGCAGCGTATCTCGCTGCGAGATGATACGTACGTACGAGC']
-exp_dna = "TAGTATATCGACTAGTACAGCGTAGCATCTCGCAGCGAGATACGCTGCTACGCAGCATGCTGTGAGTATCGATGACGAGTGACTCTGTACAGTACGTACGTACGTACGTACGTACGTACGACTAT"
-
-exp_split_dna = ["TAGTATATCGACTAGTACAGCGTAGCATCTCGCAGCGAGATACGCTGCTACGCAGCATGCTGTGAGTATCGATGA", "CATCTCGCAGCGAGATACGCTGCTACGCAGCATGCTGTGAGTATCGATGACGAGTGACTCTGTACAGTACGTAC"]
-
-exp_b3 = "20100202101010100021200012221110221201112000212210002212222212021100210122100110210111200021000000000000000000000000000010102"
-
-dna_map = {'A': {'C': '0', 'G': '1', 'T': '2'},
-           'C': {'G': '0', 'T': '1', 'A': '2'},
-           'G': {'T': '0', 'A': '1', 'C': '2'},
-           'T': {'A': '0', 'C': '1', 'G': '2'}}
 
 
 def check_len_and_orientation(dna):
@@ -40,10 +27,6 @@ def check_len_and_orientation(dna):
 
 
 def b3_to_dna(str_to_encode, prev_char=None):
-    dna_map = {'A': {'0': 'C', '1': 'G', '2': 'T'},
-               'C': {'0': 'G', '1': 'T', '2': 'A'},
-               'G': {'0': 'T', '1': 'A', '2': 'C'},
-               'T': {'0': 'A', '1': 'C', '2': 'G'}}
     dna_out = ""
     for i in range(len(str_to_encode)):
         if not prev_char:
@@ -54,17 +37,49 @@ def b3_to_dna(str_to_encode, prev_char=None):
 
     return dna_out
 
+dna_map = {'A': {'C': '0', 'G': '1', 'T': '2'},
+           'C': {'G': '0', 'T': '1', 'A': '2'},
+           'G': {'T': '0', 'A': '1', 'C': '2'},
+           'T': {'A': '0', 'C': '1', 'G': '2'}}
+decode_dna_map = {'A': str.maketrans({'C': '0', 'G': '1', 'T': '2'}),
+           'C': str.maketrans({'G': '0', 'T': '1', 'A': '2'}),
+           'G': str.maketrans({'T': '0', 'A': '1', 'C': '2'}),
+           'T': str.maketrans({'A': '0', 'C': '1', 'G': '2'})}
 
 def dna_to_b3(str_to_decode, prev_char=None):
 
     b3_out = ""
+    b3_out2 = ""
+    # for i in range(len(str_to_decode)):
+    #     if not prev_char:
+    #         prev_char = 'A'
+    #     cur_char = dna_map[prev_char][str_to_decode[i]]
+    #     b3_out += cur_char
+    #     prev_char = str_to_decode[i]
+    prev_char2 = prev_char
+
+    str_rev = str_to_decode[::-1]
     for i in range(len(str_to_decode)):
-        if not prev_char:
-            prev_char = 'A'
-        cur_char = dna_map[prev_char][str_to_decode[i]]
-        b3_out += cur_char
-        prev_char = str_to_decode[i]
-    return b3_out
+        #print(i)
+        if i == len(str_to_decode)-1:
+            if not prev_char2:
+                prev_char2 = 'A'
+            b3_out2 += str_rev[i].translate(decode_dna_map[prev_char2])
+        else:
+            b3_out2 += str_rev[i].translate(decode_dna_map[str_rev[i+1]])
+    # for i in range(len(str_to_decode)):
+    #     if not prev_char:
+    #         prev_char = 'A'
+    #     cur_char = dna_map[prev_char][str_to_decode[i]]
+    #     b3_out += cur_char
+    #     prev_char = str_to_decode[i]
+    #
+    #
+    #
+    # print("new: {0}".format(b3_out2[::-1]))
+    # print("old: {0}".format(b3_out))
+
+    return b3_out2[::-1]
 
 
 
@@ -98,8 +113,6 @@ def generate_parity_trit(i3, ID):
 
 
 def merge_overlapping(dna1, dna2):
-    #print(len(dna1), len(dna2))
-    #print("{0} \n{1}{2} ".format(dna1, "0"*(25+len(dna1)-len(dna2)) ,dna2))
     if dna1[-75:] == dna2[:75]:
         if len(dna1) % 25000 == 0:
             logging.info("Merged {0} sequences".format(((len(dna1)-100)/25)+1))
@@ -110,7 +123,6 @@ def merge_overlapping2(dna1, dna2):
     if dna1[-75:] == dna2[:75]:
         if len(dna1) % 25000 == 0:
             logging.info("Merged {0} sequences".format(((len(dna1) - 100) / 25) + 1))
-        #print(len(dna1 + dna2))
         return dna1 + dna2[75:]
     else:
         raise Exception("Could not merge dna strings \n dna1: {0} \n dna2: {1} ".format(dna1[-75:], dna2[:75]))
@@ -138,8 +150,6 @@ def b3_to_ord(b3):
 
 
 
-
-
 def split_up(dna_list):
     groups = list()
     ordered = [dna_list[i] for i in range(len(dna_list))]
@@ -160,7 +170,7 @@ def merge_newest(f1):
 
 def load_indexed_seqs(verified_dna):
     id_2 = [(dna_to_b3(seq[-15:], prev_char=seq[-16]), seq[:-15]) for seq in verified_dna]
-    return dict(id_2)#indexed_b3
+    return dict(id_2)
 
 
 def parse_index(indexed_b3):
@@ -187,7 +197,8 @@ def assign_to_files(parsed_index):
     # TODO: rewrite as generator
     return files
 
-files = assign_to_files()
+
+files = assign_to_files(parsed_index)
 f1 = files["12"]
 
 def rev_comp_all(f1):
