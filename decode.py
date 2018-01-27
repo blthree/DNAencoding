@@ -24,28 +24,6 @@ def check_len_and_orientation(dna):
     return dna
 
 
-def b3_to_dna(str_to_encode, prev_char=None):
-    dna_out = ""
-    for i in range(len(str_to_encode)):
-        if not prev_char:
-            prev_char = 'A'
-        cur_char = dna_map[prev_char][str_to_encode[i]]
-        dna_out += cur_char
-        prev_char = cur_char
-
-    return dna_out
-
-
-def dna_to_b3(str_to_decode, prev_char=None):
-    b3_out = ""
-    for i in range(len(str_to_decode)):
-        if not prev_char:
-            prev_char = 'A'
-        b3_out += dna_map[prev_char][str_to_decode[i]]
-        prev_char = str_to_decode[i]
-    return b3_out
-
-
 def b3_to_int(b3):
     out = 0
     for i in range(len(b3)):
@@ -74,7 +52,7 @@ def generate_parity_trit(i3, ID):
     return index
 
 
-def merge_overlapping2(dna1, dna2):
+def merge_overlapping(dna1, dna2):
     if dna1[-75:] == dna2[:75]:
         if len(dna1) % 25000 == 0:
             logging.info("Merged {0} sequences".format(((len(dna1) - 100) / 25) + 1))
@@ -92,19 +70,6 @@ def strip_len_info(b3):
     return b3
 
 
-def b3_to_ord(b3):
-    ords = bytearray()
-    accum = ""
-    for i in range(len(b3)):
-        accum += b3[i]
-        if accum in huffman_decode:
-            ords.append(huffman_decode[accum])
-            accum = ""
-        else:
-            pass
-    return ords
-
-
 def load_indexed_seqs(verified_dna):
     id_2 = [(dna_to_b3(seq[-15:], prev_char=seq[-16]), seq[:-15]) for seq in verified_dna]
     return dict(id_2)
@@ -114,15 +79,11 @@ def parse_index(indexed_b3):
     p = [(confirm_parity(x), indexed_b3[x]) for x in indexed_b3]
     return dict(p)
 
-
-def rev_comp_all(f1):
+def rev_comp_odd(f1):
     for key in f1:
         if key % 2 != 0:
             f1[key] = rev_comp2(f1[key])
-    fz = [()]
-    # TODO: rewrite as generator
     return f1
-
 
 def assign_to_files(parsed_index):
     files = dict()
@@ -150,17 +111,17 @@ def split_up(dna_list):
 
 
 def merge_newest(f1):
-    return reduce(merge_overlapping2, map(lambda x: reduce(merge_overlapping2, x), split_up(f1)))
+    return reduce(merge_overlapping, map(lambda x: reduce(merge_overlapping, x), split_up(f1)))
 
 
-def decode():
-    with open("out.jpg", 'r') as f:
+def decode(in_filename, out_filename):
+    with open(in_filename, 'r') as f:
         metamorph = [line.strip("\n") for line in f.readlines()]
     verified_dna = check_len_and_orientation(metamorph)
     indexed_b3 = load_indexed_seqs(verified_dna)
     parsed_index = parse_index(indexed_b3)
     f1 = assign_to_files(parsed_index)["12"]
-    f1 = rev_comp_all(f1)
+    f1 = rev_comp_odd(f1)
 
 
     logging.info("Found {0} sequences, encoding approximately {1} characters".format(len(f1), len(f1) * 18))
@@ -172,7 +133,7 @@ def decode():
 
     ord_data = b3_to_ord(strip_len_info(b3_message))
 
-    with open("decoded.png", "wb") as f:
+    with open(out_filename, "wb") as f:
         f.write(ord_data)
 
-decode()
+decode("out.jpg", "decoded.png")
