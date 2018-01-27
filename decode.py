@@ -150,15 +150,20 @@ with open("out.jpg", 'r') as f:
 ####### BEGIN decode metamorph
 
 verified_dna = check_len_and_orientation(metamorph)
-indexed_dna = dict()
-indexed_b3 = dict()
-for seq in verified_dna:
-    indexed_dna[seq[-15:]] = seq[:-15]
-    indexed_b3[dna_to_b3(seq[-15:], prev_char=seq[-16])] = seq[:-15]
 
-parsed_index = {}
-for x in indexed_b3:
-    parsed_index[confirm_parity(x)] = indexed_b3[x]
+def load_indexed_seqs(verified_dna):
+    id_2 = [(dna_to_b3(seq[-15:], prev_char=seq[-16]), seq[:-15]) for seq in verified_dna]
+    return dict(id_2)
+
+
+def parse_index(indexed_b3):
+    p = [(confirm_parity(x), indexed_b3[x]) for x in indexed_b3]
+    return dict(p)
+
+
+indexed_b3 = load_indexed_seqs(verified_dna)
+parsed_index = parse_index(indexed_b3)
+
 files = dict()
 for key in parsed_index:
     file_id, chunk_id = key
@@ -184,44 +189,11 @@ def split_up(dna_list):
     return groups
 
 logging.info("Found {0} sequences, encoding approximately {1} characters".format(len(f1), len(f1)*18))
-# TODO: make me faster, need to dump to disk or something
-# if we just split and map reduce, then we lose the previous char!
-# could also convert then merge, by passing a tuple of (current seq, prev_seq[:-1])
 
-def merge_old(f1):
-    merged = reduce(merge_overlapping2, [f1[k] for k in range(len(f1))])
-    return merged
 
-def merge_new(f1):
-    m1 = []
-    for g in split_up(f1):
-        m1.append(reduce(merge_overlapping2, g))
-    #print(m1[0][-75:])
-    #print(m1[1][:75])
-    merge_overlapping(m1[0], m1[1])
-    #merged = reduce(merge_overlapping, m1)
-    accum = m1[0]
-    for i in range(len(m1)-1):
-        print("XXXXXXXXXXXXXXXXXXXXXXXXXXXX")
-        print(i)
-        print(accum[-75:])
-        print(m1[i+1][:75])
-        print(m1[i+1][-25:])
-        print("len is {0}".format(len(accum)))
-        #accum += m1[i+1][75:]
-        accum = merge_overlapping2(accum, m1[i+1])
-    return accum
 
 def merge_newest(f1):
-    m1 = []
-    #for g in split_up(f1):
-        #m1.append(reduce(merge_overlapping2, g))
-        #reduce(merge_overlapping2, )
-    m = split_up(f1)
-    out = reduce(merge_overlapping2, map(lambda x: reduce(merge_overlapping2, x), m))
-
-    #out = reduce(merge_overlapping2, reduce(merge_overlapping2, [g for g in split_up(f1)]))
-    return out
+    return reduce(merge_overlapping2, map(lambda x: reduce(merge_overlapping2, x), split_up(f1)))
 
 
 merged = merge_newest(f1)
@@ -230,8 +202,6 @@ logging.info("Begin dna to base3 conversion")
 b3_message = dna_to_b3(merged)
 
 ord_data = b3_to_ord(strip_len_info(b3_message))
-
-#decoded2 = map(chr, ord_data)
 
 with open("decoded.jpg", "wb") as f:
     f.write(ord_data)
