@@ -25,10 +25,6 @@ def check_len_and_orientation(dna):
 
 
 def b3_to_dna(str_to_encode, prev_char=None):
-    dna_map = {'A': {'0': 'C', '1': 'G', '2': 'T'},
-               'C': {'0': 'G', '1': 'T', '2': 'A'},
-               'G': {'0': 'T', '1': 'A', '2': 'C'},
-               'T': {'0': 'A', '1': 'C', '2': 'G'}}
     dna_out = ""
     for i in range(len(str_to_encode)):
         if not prev_char:
@@ -39,16 +35,48 @@ def b3_to_dna(str_to_encode, prev_char=None):
 
     return dna_out
 
+dna_map = {'A': {'C': '0', 'G': '1', 'T': '2'},
+           'C': {'G': '0', 'T': '1', 'A': '2'},
+           'G': {'T': '0', 'A': '1', 'C': '2'},
+           'T': {'A': '0', 'C': '1', 'G': '2'}}
+decode_dna_map = {'A': str.maketrans({'C': '0', 'G': '1', 'T': '2'}),
+           'C': str.maketrans({'G': '0', 'T': '1', 'A': '2'}),
+           'G': str.maketrans({'T': '0', 'A': '1', 'C': '2'}),
+           'T': str.maketrans({'A': '0', 'C': '1', 'G': '2'})}
 
 def dna_to_b3(str_to_decode, prev_char=None):
     b3_out = ""
+    b3_out2 = ""
+    # for i in range(len(str_to_decode)):
+    #     if not prev_char:
+    #         prev_char = 'A'
+    #     cur_char = dna_map[prev_char][str_to_decode[i]]
+    #     b3_out += cur_char
+    #     prev_char = str_to_decode[i]
+    prev_char2 = prev_char
+
+    str_rev = str_to_decode[::-1]
     for i in range(len(str_to_decode)):
-        if not prev_char:
-            prev_char = 'A'
-        cur_char = dna_map[prev_char][str_to_decode[i]]
-        b3_out += cur_char
-        prev_char = str_to_decode[i]
-    return b3_out
+        #print(i)
+        if i == len(str_to_decode)-1:
+            if not prev_char2:
+                prev_char2 = 'A'
+            b3_out2 += str_rev[i].translate(decode_dna_map[prev_char2])
+        else:
+            b3_out2 += str_rev[i].translate(decode_dna_map[str_rev[i+1]])
+    # for i in range(len(str_to_decode)):
+    #     if not prev_char:
+    #         prev_char = 'A'
+    #     cur_char = dna_map[prev_char][str_to_decode[i]]
+    #     b3_out += cur_char
+    #     prev_char = str_to_decode[i]
+    #
+    #
+    #
+    # print("new: {0}".format(b3_out2[::-1]))
+    # print("old: {0}".format(b3_out))
+
+    return b3_out2[::-1]
 
 
 def b3_to_int(b3):
@@ -167,6 +195,7 @@ def decode():
     f1 = assign_to_files(parsed_index)["12"]
     f1 = rev_comp_all(f1)
 
+
     logging.info("Found {0} sequences, encoding approximately {1} characters".format(len(f1), len(f1) * 18))
 
     merged = merge_newest(f1)
@@ -178,6 +207,5 @@ def decode():
 
     with open("decoded.png", "wb") as f:
         f.write(ord_data)
-
 
 decode()
