@@ -14,8 +14,10 @@ exp_split_dna = ["TAGTATATCGACTAGTACAGCGTAGCATCTCGCAGCGAGATACGCTGCTACGCAGCATGCTG
 
 exp_b3 = "20100202101010100021200012221110221201112000212210002212222212021100210122100110210111200021000000000000000000000000000010102"
 
-
-
+dna_map = {'A': {'C': '0', 'G': '1', 'T': '2'},
+           'C': {'G': '0', 'T': '1', 'A': '2'},
+           'G': {'T': '0', 'A': '1', 'C': '2'},
+           'T': {'A': '0', 'C': '1', 'G': '2'}}
 
 
 def check_len_and_orientation(dna):
@@ -54,10 +56,7 @@ def b3_to_dna(str_to_encode, prev_char=None):
 
 
 def dna_to_b3(str_to_decode, prev_char=None):
-    dna_map = {'A': {'C': '0', 'G': '1', 'T': '2'},
-               'C': {'G': '0', 'T': '1', 'A': '2'},
-               'G': {'T': '0', 'A': '1', 'C': '2'},
-               'T': {'A': '0', 'C': '1', 'G': '2'}}
+
     b3_out = ""
     for i in range(len(str_to_decode)):
         if not prev_char:
@@ -66,6 +65,8 @@ def dna_to_b3(str_to_decode, prev_char=None):
         b3_out += cur_char
         prev_char = str_to_decode[i]
     return b3_out
+
+
 
 def b3_to_int(b3):
     out = 0
@@ -102,13 +103,17 @@ def merge_overlapping(dna1, dna2):
     if dna1[-75:] == dna2[:75]:
         if len(dna1) % 25000 == 0:
             logging.info("Merged {0} sequences".format(((len(dna1)-100)/25)+1))
-        return dna1 + dna2[-25:]
+        return dna1 + dna2[75:]
     else:
         raise Exception("Could not merge dna strings \n dna1: {0} \n dna2: {1} ".format(dna1[-75:], dna2[:75]))
 def merge_overlapping2(dna1, dna2):
+    if dna1[-75:] == dna2[:75]:
         if len(dna1) % 25000 == 0:
-            logging.info("Merged {0} sequences".format(((len(dna1)-100)/25)+1))
-        return dna1 + dna2[-25:]
+            logging.info("Merged {0} sequences".format(((len(dna1) - 100) / 25) + 1))
+        #print(len(dna1 + dna2))
+        return dna1 + dna2[75:]
+    else:
+        raise Exception("Could not merge dna strings \n dna1: {0} \n dna2: {1} ".format(dna1[-75:], dna2[:75]))
 
 def strip_len_info(b3):
     str_len = b3_to_int(b3[-20:])
@@ -182,9 +187,44 @@ logging.info("Found {0} sequences, encoding approximately {1} characters".format
 # TODO: make me faster, need to dump to disk or something
 # if we just split and map reduce, then we lose the previous char!
 # could also convert then merge, by passing a tuple of (current seq, prev_seq[:-1])
-split_up(f1)
-merged = reduce(merge_overlapping2, [f1[k] for k in range(len(f1))])
 
+def merge_old(f1):
+    merged = reduce(merge_overlapping2, [f1[k] for k in range(len(f1))])
+    return merged
+
+def merge_new(f1):
+    m1 = []
+    for g in split_up(f1):
+        m1.append(reduce(merge_overlapping2, g))
+    #print(m1[0][-75:])
+    #print(m1[1][:75])
+    merge_overlapping(m1[0], m1[1])
+    #merged = reduce(merge_overlapping, m1)
+    accum = m1[0]
+    for i in range(len(m1)-1):
+        print("XXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+        print(i)
+        print(accum[-75:])
+        print(m1[i+1][:75])
+        print(m1[i+1][-25:])
+        print("len is {0}".format(len(accum)))
+        #accum += m1[i+1][75:]
+        accum = merge_overlapping2(accum, m1[i+1])
+    return accum
+
+def merge_newest(f1):
+    m1 = []
+    #for g in split_up(f1):
+        #m1.append(reduce(merge_overlapping2, g))
+        #reduce(merge_overlapping2, )
+    m = split_up(f1)
+    out = reduce(merge_overlapping2, map(lambda x: reduce(merge_overlapping2, x), m))
+
+    #out = reduce(merge_overlapping2, reduce(merge_overlapping2, [g for g in split_up(f1)]))
+    return out
+
+
+merged = merge_newest(f1)
 logging.info("Merge complete")
 logging.info("Begin dna to base3 conversion")
 b3_message = dna_to_b3(merged)
