@@ -137,39 +137,8 @@ def b3_to_ord(b3):
     return ords
 
 
-dna_map = {'A': {'C': '0', 'G': '1', 'T': '2'},
-           'C': {'G': '0', 'T': '1', 'A': '2'},
-           'G': {'T': '0', 'A': '1', 'C': '2'},
-           'T': {'A': '0', 'C': '1', 'G': '2'}}
 
 
-with open("out.jpg", 'r') as f:
-    metamorph = [line.strip("\n") for line in f.readlines()]
-
-
-####### BEGIN decode metamorph
-
-verified_dna = check_len_and_orientation(metamorph)
-indexed_dna = dict()
-indexed_b3 = dict()
-for seq in verified_dna:
-    indexed_dna[seq[-15:]] = seq[:-15]
-    indexed_b3[dna_to_b3(seq[-15:], prev_char=seq[-16])] = seq[:-15]
-
-parsed_index = {}
-for x in indexed_b3:
-    parsed_index[confirm_parity(x)] = indexed_b3[x]
-files = dict()
-for key in parsed_index:
-    file_id, chunk_id = key
-    if file_id not in files:
-        files[file_id] = {b3_to_int(chunk_id): parsed_index[key]}
-    else:
-        files[file_id][b3_to_int(chunk_id)] = parsed_index[key]
-f1 = files["12"]
-for key in f1:
-    if key % 2 != 0:
-        f1[key] = rev_comp2(f1[key])
 
 def split_up(dna_list):
     groups = list()
@@ -183,56 +152,64 @@ def split_up(dna_list):
             ordered = ordered[10000:]
     return groups
 
-logging.info("Found {0} sequences, encoding approximately {1} characters".format(len(f1), len(f1)*18))
-# TODO: make me faster, need to dump to disk or something
-# if we just split and map reduce, then we lose the previous char!
-# could also convert then merge, by passing a tuple of (current seq, prev_seq[:-1])
-
-def merge_old(f1):
-    merged = reduce(merge_overlapping2, [f1[k] for k in range(len(f1))])
-    return merged
-
-def merge_new(f1):
-    m1 = []
-    for g in split_up(f1):
-        m1.append(reduce(merge_overlapping2, g))
-    #print(m1[0][-75:])
-    #print(m1[1][:75])
-    merge_overlapping(m1[0], m1[1])
-    #merged = reduce(merge_overlapping, m1)
-    accum = m1[0]
-    for i in range(len(m1)-1):
-        print("XXXXXXXXXXXXXXXXXXXXXXXXXXXX")
-        print(i)
-        print(accum[-75:])
-        print(m1[i+1][:75])
-        print(m1[i+1][-25:])
-        print("len is {0}".format(len(accum)))
-        #accum += m1[i+1][75:]
-        accum = merge_overlapping2(accum, m1[i+1])
-    return accum
 
 def merge_newest(f1):
-    m1 = []
-    #for g in split_up(f1):
-        #m1.append(reduce(merge_overlapping2, g))
-        #reduce(merge_overlapping2, )
-    m = split_up(f1)
-    out = reduce(merge_overlapping2, map(lambda x: reduce(merge_overlapping2, x), m))
+    return reduce(merge_overlapping2, map(lambda x: reduce(merge_overlapping2, x), split_up(f1)))
 
-    #out = reduce(merge_overlapping2, reduce(merge_overlapping2, [g for g in split_up(f1)]))
-    return out
 
+
+def load_indexed_seqs(verified_dna):
+    id_2 = [(dna_to_b3(seq[-15:], prev_char=seq[-16]), seq[:-15]) for seq in verified_dna]
+    return dict(id_2)#indexed_b3
+
+
+def parse_index(indexed_b3):
+    p = [(confirm_parity(x), indexed_b3[x]) for x in indexed_b3]
+    return dict(p)
+
+
+####### BEGIN decode metamorph
+
+with open("out.jpg", 'r') as f:
+    metamorph = [line.strip("\n") for line in f.readlines()]
+verified_dna = check_len_and_orientation(metamorph)
+indexed_b3 = load_indexed_seqs(verified_dna)
+parsed_index = parse_index(indexed_b3)
+
+def assign_to_files(parsed_index):
+    files = dict()
+    for key in parsed_index:
+        file_id, chunk_id = key
+        if file_id not in files:
+            files[file_id] = {b3_to_int(chunk_id): parsed_index[key]}
+        else:
+            files[file_id][b3_to_int(chunk_id)] = parsed_index[key]
+    # TODO: rewrite as generator
+    return files
+
+files = assign_to_files()
+f1 = files["12"]
+
+def rev_comp_all(f1):
+    for key in f1:
+        if key % 2 != 0:
+            f1[key] = rev_comp2(f1[key])
+    fz = [()]
+    # TODO: rewrite as generator
+    return f1
+
+
+logging.info("Found {0} sequences, encoding approximately {1} characters".format(len(f1), len(f1)*18))
 
 merged = merge_newest(f1)
+
+
 logging.info("Merge complete")
 logging.info("Begin dna to base3 conversion")
 b3_message = dna_to_b3(merged)
 
 ord_data = b3_to_ord(strip_len_info(b3_message))
-
-#decoded2 = map(chr, ord_data)
-
+# Write out the decoded file as bytes
 with open("decoded.jpg", "wb") as f:
     f.write(ord_data)
 
