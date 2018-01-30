@@ -107,6 +107,9 @@ class asciiStr(object):
             i = i // 3
         return out
 
+    def to_base3(self):
+        return "".join(self._a2b3())
+
     def to_trits(self):
         self.raw_trits = "".join(self._a2b3())
         self._add_zeros()
@@ -149,3 +152,15 @@ class dna(object):
             b3_out += self.dna_map[prev_char][self.seq[i]]
             prev_char = self.seq[i]
         return b3_out
+
+
+class DNAEncoder(object):
+    def __init__(self, bytes_in):
+        if not isinstance(bytes_in, bytes):
+            raise TypeError("encoder input must be bytes object, not {0}".format(type(bytes_in)))
+        self.input = asciiStr(bytes_in)
+        self.input_base3 = ""
+        self.trit_encoded = ""
+
+    def base3_encode(self):
+        self.input_base3 = self.input.to_base3()
