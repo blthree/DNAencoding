@@ -1,5 +1,5 @@
 from utils import *
-
+from classes import ascii_bytes
 
 def build_initial_dna_string(b3_str):
     # calculate length for indexing
@@ -67,9 +67,15 @@ def encode(in_str, ID):
 def create_dna_from_file(in_filename, out_filename):
     with open(in_filename, 'rb') as f:
         metamorph = f.read()
+        print(type(metamorph))
     b = encode(metamorph, "12")
     with open(out_filename, 'w') as f2:
         f2.write("\n".join(b))
+def create_dna_from_file2(in_filename, out_filename):
+    metamorph = ascii_bytes.from_file(in_filename)
+    print(type(metamorph))
+    b = encode(metamorph.ascii_bytes, "12")
+    with open(out_filename, 'w') as f2:
+        f2.write("\n".join(b))
 
-
-create_dna_from_file("background_img.png", "out.jpg")
+create_dna_from_file2("background_img.png", "out.jpg")

@@ -3,7 +3,8 @@ from functools import reduce
 import logging
 
 logging.basicConfig(level=logging.INFO)
-
+hyh = seq_tuple("1001", "ATAGCTA")
+print(hyh.seq)
 
 def check_len_and_orientation(dna):
     valid_starts = ['A', 'T']
