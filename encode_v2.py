@@ -1,5 +1,5 @@
 from encode import *
-keystream = {0: "002000010110102111112122210011122221010102121222022000221201020221002121121000212222021211121122221",
+keystream = {0: "0002000010110102111112122210011122221010102121222022000221201020221002121121000212222021211121122221",
             1: "202020122121210120001200210222112020222022222220220001221012111022121120202022211221112202002121022",
             2: "221221101200221120220011002222100000020200021121021020122100021201010210202002000101020022121100100",
             3: "100122100011112100120210020011102201122122100100120122212000021220022012202201100010212222110222020"}
@@ -36,27 +36,39 @@ def encode(in_str, ID):
 dna_str = encode(test_str, "12")
 dna0 = dna_str[:100]
 dna2base4 = str.maketrans({'A':'0', 'C':'1', 'G':'2', 'T':'3'})
-base4_0 = dna0.translate(dna2base4)
-key0 = [(int(base4_0[i+1]) - int(base4_0[i]))%3 for i in range(len(base4_0)-1)]
-print(len(key0))
-print(key0)
-print(dna_str)
-for i in range(len(key0)):
-    key0[i] += int(keystream[0])
-    if key0[i] > 3:
-        key0[i] = key0[i] % 3
-key1 = [(key0[i] + 1) for i in range(len(key0)-1)]
-encrypted = list()
+base4_2_dna = str.maketrans({'0':'A', '1':'C', '2':'G', '3':'T'})
+print(dna0)
+base4_0 = [int(x) for x in dna0.translate(dna2base4)]
 
-for i in range(len(base4_0)-1):
-    if i == 0:
-        encrypted.append(base4_0[i])
-    else:
-        new = (int(base4_0[i]) + key1[i-1]) % 4
-        encrypted.append(new)
-base4_1 = "".join([str(x) for x in encrypted])
-base4_2dna = str.maketrans({'0':'A', '1':'C', '2':'G', '3':'T'})
-dna2 = base4_1.translate(base4_2dna)
-print(dna2)
+temp = list()
+temp2 = list()
+kstrits = [int(x) for x in keystream[0]]
+print(len(base4_0))
+print(len(kstrits))
+L = len(kstrits)
 
+
+# this code adapted from the author's perl script, it did not translate well, but it works
+# need to change keystream based on chunk_id tho
+for i in range(1, L):
+    j = L-i
+    base4_0[j] = (base4_0[j] - base4_0[j-1]) % 4
+print("".join(str(x) for x in base4_0))
+for i in range(1, L):
+    base4_0[i] = (base4_0[i]-1) % 3
+print("".join(str(x) for x in base4_0))
+
+for i in range(1, L):
+    # add to encrypt, subtract to decrypt
+    base4_0[i] = (base4_0[i] + kstrits[i]) % 3
+print("".join(str(x) for x in base4_0))
+for i in range(1, L):
+    base4_0[i] = (base4_0[i] +1) % 4
+print("".join(str(x) for x in base4_0))
+for i in range(1, L-1):
+    base4_0[i] = (base4_0[i] + base4_0[i-1]) % 4
+print("".join(str(x) for x in base4_0))
+temp6 = "".join([str(x) for x in base4_0])
+temp6 = temp6.translate(base4_2_dna)
+print(temp6)
 
