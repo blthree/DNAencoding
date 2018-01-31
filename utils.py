@@ -100,7 +100,10 @@ def dna_to_b3(str_to_decode, prev_char=None):
     for i in range(len(str_to_decode)):
         if not prev_char:
             prev_char = 'A'
-        b3_out += dna_map[prev_char][str_to_decode[i]]
+        try:
+            b3_out += dna_map[prev_char][str_to_decode[i]]
+        except KeyError:
+            raise KeyError("position {0}, {1}{2}".format(i, prev_char, str_to_decode[i]))
         prev_char = str_to_decode[i]
     return b3_out
 

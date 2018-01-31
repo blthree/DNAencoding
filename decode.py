@@ -136,4 +136,4 @@ def decode(in_filename, out_filename):
     with open(out_filename, "wb") as f:
         f.write(ord_data)
 
-decode("out.jpg", "decoded.png")
+#decode("out.jpg", "decoded.png")
