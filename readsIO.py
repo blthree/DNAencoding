@@ -22,7 +22,7 @@ def load_reads(filename):
 
 def load_reads2(filename):
     with open(filename, 'rt') as f1:
-        for line in f1.readlines(50000):
+        for line in f1.readlines():
             read_seqs.append(line.strip("\n"))
         return read_seqs
 reads = load_reads2(file2)
@@ -86,69 +86,46 @@ def confirm_parity(index):
         #logging.debug("Parity Trit OK!")
         out = (file_id, chunk_id)
     else:
-        print("Parity error")
+        #print("Parity error")
         #raise Exception("Parity Trit Error")
         out = ("9999", "9999")
     return out
 def parse_index(indexed_b3):
-    p = [(confirm_parity(x), indexed_b3[x]) for x in indexed_b3]
-    print(dict(p)[("9999", "9999")])
-    ### this step is killing duplicate chunk IDs!!!!1
-    return dict(p)
+    #p = [(confirm_parity(x), indexed_b3[x]) for x in indexed_b3]
 
-def assign_to_files(parsed_index):
-    files = dict()
-    for key in parsed_index:
-        file_id, chunk_id = key
-        #print(file_id, chunk_id)
-        if file_id not in files:
-            files[file_id] = {chunk_id: list()}
-            if file_id == "9999":
-                print("if branch 1")
+    ### this step is killing duplicate chunk IDs!!!!1
+    p = dict()
+    for x in indexed_b3:
+        file_id, chunk_id = confirm_parity(x)
+        chunk_id = b3_to_int(chunk_id)
+        seq = indexed_b3[x]
+        if not file_id in p:
+            p[file_id] = {chunk_id: list()}
         else:
-            if chunk_id not in files[file_id]:
-                files[file_id][chunk_id] = list()
-                if file_id == "9999":
-                    print("else branch 2")
-        files[file_id][chunk_id].append(parsed_index[key])
-    # TODO: rewrite as generator
-    print(files["9999"])
-    return files
+            if chunk_id not in p[file_id]:
+                p[file_id][chunk_id] = list()
+        p[file_id][chunk_id].append(seq)
+
+    return p
 
 
 parsed_indexes = parse_index(indexed_b3)
+
 file_id = Counter()
-chunk_counter = Counter()
-# for f_id, c_id in parsed_indexes:
-#     file_id[f_id] += 1
-#     if f_id == "00":
-#         chunk_counter[c_id] += 1
+
+for f in parsed_indexes:
+    for c in parsed_indexes[f]:
+        file_id[f] += len(parsed_indexes[f][c])
 print(file_id)
+file_00 = parsed_indexes["00"]
+chunk_counter = Counter()
+for chunk in file_00:
+    if len(file_00[chunk]) > 1:
+        print(chunk, len(file_00[chunk]))
+    chunk_counter[chunk] += len(file_00[chunk])
 print(chunk_counter)
-print(len(chunk_counter))
-files = assign_to_files(parsed_indexes)
 
-
-
-# file_00 = files["00"]
-# chunk_counter = Counter()
-# yu = [len(file_00[x]) for x in file_00]
-# print("max=")
-# print(max(yu))
-# print(file_00[0])
-# for k in file_00:
-#     chunk_counter[k] += len(file_00[k])
-# print(chunk_counter)
-# print(min(chunk_counter.keys()), max(chunk_counter.keys()))
-# missing = list()
-# max_piece = 0
-# for i in range(max(chunk_counter.keys())):
-#     if i in chunk_counter:
-#         max_piece = i
-#     else:
-#         break
-# print(max_piece)
-#
-# print(max(chunk_counter.values()))
-# print(len(file_00))
-#
+print(max(file_00.keys()))
+for i in range(len(file_00)):
+    if not i in file_00:
+        print("Missing chunk # {0}".format(i))
