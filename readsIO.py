@@ -82,13 +82,13 @@ def confirm_parity(index):
 
     file_id = index[:2]
     chunk_id = index[2:-1]
-    if generate_parity_trit(chunk_id, file_id) == index:
+    #if generate_parity_trit(chunk_id, file_id) == index:
         #logging.debug("Parity Trit OK!")
-        out = (file_id, chunk_id)
-    else:
+    out = (file_id, chunk_id)
+    #else:
         #print("Parity error")
         #raise Exception("Parity Trit Error")
-        out = ("9999", "9999")
+     #   out = ("9999", "9999")
     return out
 def parse_index(indexed_b3):
     #p = [(confirm_parity(x), indexed_b3[x]) for x in indexed_b3]
@@ -107,25 +107,48 @@ def parse_index(indexed_b3):
         p[file_id][chunk_id].append(seq)
 
     return p
+def parse_index2(indexed_b3):
+    #p = [(confirm_parity(x), indexed_b3[x]) for x in indexed_b3]
 
+    ### this step is killing duplicate chunk IDs!!!!1
+    p = dict()
+    for x in indexed_b3:
+        file_id, chunk_id = confirm_parity(x)
+        chunk_id = b3_to_int(chunk_id)
+        seq = indexed_b3[x]
+        if file_id == "00":
+            if chunk_id not in p:
+                p[chunk_id] = list()
+                p[chunk_id].append(seq)
+            else:
+                p[chunk_id].append(seq)
 
-parsed_indexes = parse_index(indexed_b3)
+    return p
 
-file_id = Counter()
+parsed_indexes = parse_index2(indexed_b3)
+#print(parsed_indexes)
+# file_id = Counter()
+#
+# for f in parsed_indexes:
+#     for c in parsed_indexes[f]:
+#         file_id[f] += len(parsed_indexes[f][c])
+# print(file_id)
+# file_00 = parsed_indexes["00"]
+# chunk_counter = Counter()
+# for chunk in file_00:
+#     if len(file_00[chunk]) > 1:
+#         print(chunk, len(file_00[chunk]))
+#     chunk_counter[chunk] += len(file_00[chunk])
+# print(chunk_counter)
+# print(parsed_indexes["00"])
+# print(max(file_00.keys()))
+contiguous = 0
+for i in range(len(parsed_indexes)):
+    if i in parsed_indexes:
+        contiguous += 1
+    else:
+        break
+print(contiguous)
 
-for f in parsed_indexes:
-    for c in parsed_indexes[f]:
-        file_id[f] += len(parsed_indexes[f][c])
-print(file_id)
-file_00 = parsed_indexes["00"]
-chunk_counter = Counter()
-for chunk in file_00:
-    if len(file_00[chunk]) > 1:
-        print(chunk, len(file_00[chunk]))
-    chunk_counter[chunk] += len(file_00[chunk])
-print(chunk_counter)
-
-print(max(file_00.keys()))
-for i in range(len(file_00)):
-    if not i in file_00:
-        print("Missing chunk # {0}".format(i))
+for i in range(contiguous):
+    print(i, parsed_indexes[i])
